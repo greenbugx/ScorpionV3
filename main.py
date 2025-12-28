@@ -15,13 +15,13 @@ from urllib.parse import urljoin, urlparse
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-# Colors for UI
+
 RED = "\033[91m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
 
-# Configure logging
+
 logging.basicConfig(filename="scraper.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
@@ -75,18 +75,18 @@ def show_ascii_art():
 def scan_for_xss(url, html_content, headers):
     vulnerable_inputs = []
     
-    # Look for input fields that might be vulnerable to XSS
+    
     soup = BeautifulSoup(html_content, "html.parser")
     inputs = soup.find_all(['input', 'textarea'])
     forms = soup.find_all('form')
     
-    # Check for missing XSS protections in inputs
+    
     for input_field in inputs:
         input_type = input_field.get('type', '')
         input_name = input_field.get('name', 'unnamed')
         
         if input_type.lower() in ['text', 'search', 'url', 'email', ''] or not input_type:
-            # Check if input has proper validation attributes
+            
             if not any([input_field.has_attr('pattern'), 
                         input_field.has_attr('maxlength')]):
                 vulnerable_inputs.append({
@@ -95,7 +95,7 @@ def scan_for_xss(url, html_content, headers):
                     'issue': 'Potentially vulnerable to XSS - missing validation'
                 })
     
-    # Check if the page reflects URL parameters
+    
     parsed_url = urlparse(url)
     query_params = urllib.parse.parse_qs(parsed_url.query)
     
@@ -112,11 +112,11 @@ def scan_for_xss(url, html_content, headers):
 def scan_for_sql_injection(url, html_content, headers):
     potential_vulnerabilities = []
     
-    # Look for signs of SQL injection vulnerabilities
+    
     soup = BeautifulSoup(html_content, "html.parser")
     forms = soup.find_all('form')
     
-    # Check forms with database-related field names
+    
     sql_related_names = ['id', 'user', 'username', 'password', 'email', 'query', 
                          'search', 'category', 'product', 'item', 'article']
     
@@ -139,7 +139,7 @@ def scan_for_sql_injection(url, html_content, headers):
                 'issue': 'Form with database-related fields using GET method'
             })
     
-    # Check URL parameters for SQL injection possibilities
+    
     parsed_url = urlparse(url)
     query_params = urllib.parse.parse_qs(parsed_url.query)
     
@@ -155,7 +155,7 @@ def scan_for_sql_injection(url, html_content, headers):
 def check_outdated_software(html_content, headers):
     software_versions = []
     
-    # Check HTTP headers for server information
+    
     if 'Server' in headers:
         software_versions.append({
             'software': 'Server',
@@ -170,13 +170,13 @@ def check_outdated_software(html_content, headers):
             'source': 'HTTP Header'
         })
     
-    # Look for common CMS indicators
+    
     soup = BeautifulSoup(html_content, "html.parser")
     
-    # WordPress detection
+    
     wp_content = soup.find_all(attrs={"href": re.compile(r'wp-content|wp-includes')})
     if wp_content:
-        # Try to find WordPress version
+        
         wp_version_meta = soup.find('meta', {'name': 'generator'})
         version = wp_version_meta.get('content', 'Unknown version') if wp_version_meta else 'Detected (version unknown)'
         if 'WordPress' in version:
@@ -192,7 +192,7 @@ def check_outdated_software(html_content, headers):
                 'source': 'Resource paths'
             })
     
-    # Drupal detection
+    
     drupal_paths = soup.find_all(attrs={"href": re.compile(r'sites/all/modules|drupal.js')})
     if drupal_paths:
         software_versions.append({
@@ -201,7 +201,7 @@ def check_outdated_software(html_content, headers):
             'source': 'Resource paths'
         })
     
-    # Joomla detection
+    
     joomla_paths = soup.find_all(attrs={"href": re.compile(r'media/jui|media/system')})
     if joomla_paths:
         software_versions.append({
@@ -210,7 +210,7 @@ def check_outdated_software(html_content, headers):
             'source': 'Resource paths'
         })
     
-    # JavaScript libraries
+    
     js_libraries = {
         'jquery': r'jquery[.-](\d+\.\d+\.\d+)',
         'bootstrap': r'bootstrap[.-](\d+\.\d+\.\d+)',
@@ -235,7 +235,7 @@ def check_outdated_software(html_content, headers):
 def scan_for_information_disclosure(html_content):
     sensitive_info = []
     
-    # Check for comments that might contain sensitive information
+    
     comments = re.findall(r'<!--(.*?)-->', html_content, re.DOTALL)
     for comment in comments:
         if any(keyword in comment.lower() for keyword in ['todo', 'fixme', 'password', 'admin', 'user', 'key', 'secret', 'config']):
@@ -245,7 +245,7 @@ def scan_for_information_disclosure(html_content):
                 'issue': 'Potentially sensitive information in HTML comment'
             })
     
-    # Check for hardcoded API keys, tokens, etc.
+    
     potential_keys = re.findall(r'[\'"`](api[_-]?key|token|secret|password|apikey|access[_-]?key)[\'"`]\s*[:=]\s*[\'"`]([a-zA-Z0-9]{16,})[\'"`]', html_content, re.IGNORECASE)
     for key_match in potential_keys:
         sensitive_info.append({
@@ -260,8 +260,8 @@ def check_ssl_tls_configuration(url):
     if not url.startswith('https://'):
         return {'issue': 'Not using HTTPS', 'severity': 'High'}
     
-    # require additional libraries like 'cryptography' and 'OpenSSL'
-    # For a complete implementation, we'd need more advanced SSL/TLS testing
+    
+    
     return {'status': 'HTTPS enabled - for detailed SSL/TLS analysis, use specialized tools like SSLyze/TestSSL'}
 
 def perform_security_scan(url, html_content, headers):
@@ -277,7 +277,7 @@ def perform_security_scan(url, html_content, headers):
         }
     }
     
-    # Count total vulnerabilities
+    
     total_vulns = sum(len(results['vulnerabilities'][key]) 
                       for key in ['xss', 'sql_injection', 'information_disclosure', 'software_versions'] 
                       if isinstance(results['vulnerabilities'][key], list))
@@ -309,12 +309,12 @@ def generate_user_agents(num_agents=10):
         template = random.choice(browsers[browser])
         
         if browser == 'chrome':
-            major = random.randint(90, 120)  # Recent Chrome versions
+            major = random.randint(90, 120)  
             minor = random.randint(0, 9999)
             patch = random.randint(0, 999)
             user_agents.append(template.format(major, minor, patch))
         elif browser == 'firefox':
-            version = random.randint(90, 120)  # Recent Firefox versions
+            version = random.randint(90, 120)  
             user_agents.append(template.format(version, version))
         elif browser == 'edge':
             major = random.randint(90, 120)
@@ -325,7 +325,7 @@ def generate_user_agents(num_agents=10):
             edge_patch = random.randint(0, 999)
             user_agents.append(template.format(major, minor, patch, edge_major, edge_minor, edge_patch))
     
-    return list(set(user_agents))  # Remove any duplicates
+    return list(set(user_agents))  
 
 def load_or_generate_user_agents():
     print(f"\n{GREEN}User-Agent Configuration:{RESET}")
@@ -349,7 +349,7 @@ def load_or_generate_user_agents():
         user_agents = generate_user_agents(num_agents)
         print(f"{GREEN}Generated {len(user_agents)} unique User-Agents{RESET}")
         
-        # Option to save generated User-Agents
+        
         save_choice = input("Would you like to save these User-Agents to UserAgent.txt? (y/n): ").strip().lower()
         if save_choice == 'y':
             try:
@@ -364,7 +364,7 @@ def load_or_generate_user_agents():
     else:
         print(f"{YELLOW}Invalid choice, falling back to generation...{RESET}")
     
-    # Default fallback
+    
     user_agents = generate_user_agents(10)
     print(f"{GREEN}Generated {len(user_agents)} default User-Agents{RESET}")
     return user_agents
@@ -372,13 +372,13 @@ def load_or_generate_user_agents():
 def format_proxy(proxy_string):
     """Format proxy string to proper URL format with authentication if present"""
     try:
-        # Check if proxy contains authentication credentials
+        
         if ':' in proxy_string:
             parts = proxy_string.split(':')
-            if len(parts) == 4:  # Format: ip:port:username:password
+            if len(parts) == 4:  
                 ip, port, username, password = parts
                 return f"http://{username}:{password}@{ip}:{port}"
-            elif len(parts) == 2:  # Format: ip:port
+            elif len(parts) == 2:  
                 return f"http://{proxy_string}"
         return f"http://{proxy_string}"
     except Exception as e:
@@ -421,28 +421,28 @@ def create_folder(base_path, folder_name):
 def display_security_scan_summary(scan_results):
     print(f"\n{GREEN}Security Scan Results for {scan_results['url']}:{RESET}")
     
-    # XSS vulnerabilities
+    
     xss_count = len(scan_results['vulnerabilities']['xss'])
     if xss_count > 0:
         print(f"{RED}XSS Vulnerabilities:{RESET} {xss_count} potential issue(s) found")
     else:
         print(f"{GREEN}XSS Vulnerabilities:{RESET} None detected")
     
-    # SQL Injection vulnerabilities
+    
     sql_count = len(scan_results['vulnerabilities']['sql_injection'])
     if sql_count > 0:
         print(f"{RED}SQL Injection Vulnerabilities:{RESET} {sql_count} potential issue(s) found")
     else:
         print(f"{GREEN}SQL Injection Vulnerabilities:{RESET} None detected")
     
-    # Information disclosure
+    
     info_count = len(scan_results['vulnerabilities']['information_disclosure'])
     if info_count > 0:
         print(f"{RED}Information Disclosure Issues:{RESET} {info_count} instance(s) found")
     else:
         print(f"{GREEN}Information Disclosure:{RESET} None detected")
     
-    # Software versions
+    
     software_count = len(scan_results['vulnerabilities']['software_versions'])
     if software_count > 0:
         print(f"{YELLOW}Software Detected:{RESET} {software_count} component(s) identified")
@@ -451,7 +451,7 @@ def display_security_scan_summary(scan_results):
     else:
         print(f"{GREEN}Software Detection:{RESET} No software components identified")
     
-    # HTTPS check
+    
     https_result = scan_results['vulnerabilities']['https_check']
     if 'issue' in https_result:
         print(f"{RED}HTTPS Check:{RESET} {https_result['issue']}")
@@ -484,18 +484,18 @@ def save_file(url, folder, user_agent, proxy=None, timeout=10, perform_scan=True
             print(f"{GREEN}Successfully downloaded:{RESET} {filepath}")
             logging.info(f"Downloaded: {filepath}")
             
-            # Perform security scanning if requested
+            
             if perform_scan and filename.endswith(('.html', '.htm', '.php', '.asp', '.aspx', '.jsp')) or not os.path.splitext(filename)[1]:
                 print(f"{YELLOW}Performing security scan for: {url}{RESET}")
                 html_content = response.text
                 scan_results = perform_security_scan(url, html_content, response.headers)
                 
-                # Save scan results
+                
                 scan_filepath = os.path.join(folder, f"{os.path.splitext(filename)[0]}_security_scan.json")
                 with open(scan_filepath, "w") as f:
                     json.dump(scan_results, f, indent=4)
                 
-                # Display summary
+                
                 display_security_scan_summary(scan_results)
             
             return True
@@ -547,7 +547,7 @@ def extract_assets(driver, url, folder, depth, visited, user_agents, proxies):
     time.sleep(2)
     soup = BeautifulSoup(driver.page_source, "html.parser")
 
-    # Save main HTML
+    
     user_agent = random.choice(user_agents)
     try_with_proxies(url, folder, user_agent, proxies)
 
@@ -560,7 +560,7 @@ def extract_assets(driver, url, folder, depth, visited, user_agents, proxies):
         "fonts": [font.get("href") for font in soup.find_all("link", href=True) if "font" in font.get("href")]
     }
 
-    # Download assets
+    
     for asset_type, urls in asset_types.items():
         if urls:
             print(f"\n{GREEN}Processing {len(urls)} {asset_type} files...{RESET}")
@@ -570,7 +570,7 @@ def extract_assets(driver, url, folder, depth, visited, user_agents, proxies):
                 full_url = urljoin(url, asset_url)
                 try_with_proxies(full_url, asset_folder, user_agent, proxies)
 
-    # Recursively scrape links
+    
     links = [a.get("href") for a in soup.find_all("a", href=True)]
     if links:
         print(f"\n{GREEN}Found {len(links)} links to process...{RESET}")
@@ -642,7 +642,7 @@ def scrape_website():
     user_agents = load_or_generate_user_agents()
     proxies = load_proxies()
     
-    # Display configuration summary
+    
     print(f"\n{GREEN}Configuration Summary:{RESET}")
     print(f"User-Agents: {len(user_agents)} available")
     print(f"Proxies: {len(proxies)} available")
